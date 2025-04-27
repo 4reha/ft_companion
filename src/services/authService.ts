@@ -70,7 +70,7 @@ const exchangeCodeForToken = async (code: string): Promise<boolean> => {
 
     return true;
   } catch (error) {
-    console.error("Token exchange error:", error);
+    console.log("Token exchange error:", error);
     return false;
   }
 };

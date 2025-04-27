@@ -1,6 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
+import { Button } from "../components/ui/Button";
+import { theme } from "../theme/theme";
 
 const LoginScreen = () => {
   const { login } = useAuth();
@@ -17,9 +19,7 @@ const LoginScreen = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>42 Companion</Text>
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Continue with intra</Text>
-      </TouchableOpacity>
+      <Button title="Continue with intra" onPress={handleLogin} size="large" />
     </View>
   );
 };
@@ -29,25 +29,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F5F5F5",
-    padding: 20,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.lg,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 48,
-    color: "#00BABC",
-  },
-  button: {
-    backgroundColor: "#00BABC",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: theme.typography.fontSize.xxl,
+    fontWeight: theme.typography.fontWeight.bold,
+    marginBottom: theme.spacing.xxl,
+    color: theme.colors.primary,
   },
 });
 

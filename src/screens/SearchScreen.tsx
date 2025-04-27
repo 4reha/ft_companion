@@ -4,16 +4,19 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   FlatList,
   Image,
-  ActivityIndicator,
   Alert,
+  TouchableOpacity,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
-import { searchUsers, User } from "../services/apiService";
+import { searchUsers } from "../services/apiService";
+import { LoadingView } from "../components/ui/LoadingView";
+import { Button } from "../components/ui/Button";
+import { theme } from "../theme/theme";
+import { User } from "../types/api";
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -63,6 +66,41 @@ const SearchScreen = () => {
     </TouchableOpacity>
   );
 
+  const renderContent = () => {
+    if (loading) {
+      return <LoadingView message="Searching..." />;
+    }
+
+    if (searched) {
+      if (searchResults.length > 0) {
+        return (
+          <FlatList
+            data={searchResults}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderUserItem}
+            contentContainerStyle={styles.listContainer}
+          />
+        );
+      } else {
+        return (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              No users found matching "{searchQuery}"
+            </Text>
+          </View>
+        );
+      }
+    }
+
+    return (
+      <View style={styles.initialContainer}>
+        <Text style={styles.initialText}>
+          Search for students by their login name
+        </Text>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
@@ -75,49 +113,24 @@ const SearchScreen = () => {
           returnKeyType="search"
           onSubmitEditing={handleSearch}
         />
-        <TouchableOpacity
-          style={styles.searchButton}
+        <Button
+          title="Search"
           onPress={handleSearch}
           disabled={loading}
-        >
-          <Text style={styles.searchButtonText}>Search</Text>
-        </TouchableOpacity>
+          size="small"
+          style={styles.searchButton}
+        />
       </View>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00BABC" />
-          <Text style={styles.loadingText}>Searching...</Text>
-        </View>
-      ) : searched ? (
-        searchResults.length > 0 ? (
-          <FlatList
-            data={searchResults}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderUserItem}
-            contentContainerStyle={styles.listContainer}
-          />
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              No users found matching "{searchQuery}"
-            </Text>
-          </View>
-        )
-      ) : (
-        <View style={styles.initialContainer}>
-          <Text style={styles.initialText}>
-            Search for students by their login name
-          </Text>
-        </View>
-      )}
+      <View style={styles.contentContainer}>{renderContent()}</View>
 
-      <TouchableOpacity
-        style={styles.backButton}
+      <Button
+        title="Back to Profile"
         onPress={() => navigation.navigate("Profile")}
-      >
-        <Text style={styles.backButtonText}>Back to Profile</Text>
-      </TouchableOpacity>
+        variant="secondary"
+        style={styles.backButton}
+        fullWidth
+      />
     </View>
   );
 };
@@ -125,91 +138,70 @@ const SearchScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
-    padding: 16,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.md,
   },
   searchContainer: {
     flexDirection: "row",
-    marginBottom: 16,
+    marginBottom: theme.spacing.md,
   },
   searchInput: {
     flex: 1,
     height: 46,
     borderWidth: 1,
-    borderColor: "#DDDDDD",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    backgroundColor: "#FFFFFF",
-    fontSize: 16,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: theme.colors.card,
+    fontSize: theme.typography.fontSize.md,
   },
   searchButton: {
-    marginLeft: 8,
-    backgroundColor: "#00BABC",
-    paddingHorizontal: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 8,
+    marginLeft: theme.spacing.sm,
   },
-  searchButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  loadingContainer: {
+  contentContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 8,
-    fontSize: 16,
-    color: "#666",
   },
   listContainer: {
     paddingBottom: 80,
   },
   userItem: {
     flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: theme.colors.card,
+    padding: theme.spacing.sm,
+    borderRadius: theme.radius.md,
+    marginBottom: theme.spacing.sm,
+    ...theme.shadows.small,
   },
   userImage: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#E0E0E0",
+    backgroundColor: theme.colors.border,
   },
   userInfo: {
-    marginLeft: 12,
+    marginLeft: theme.spacing.sm,
     justifyContent: "center",
     flex: 1,
   },
   userName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontSize: theme.typography.fontSize.md,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.text.primary,
   },
   userEmail: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary,
     marginTop: 2,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: theme.spacing.xl,
   },
   emptyText: {
-    fontSize: 16,
-    color: "#666",
+    fontSize: theme.typography.fontSize.md,
+    color: theme.colors.text.secondary,
     textAlign: "center",
     lineHeight: 24,
   },
@@ -217,28 +209,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: theme.spacing.xl,
   },
   initialText: {
-    fontSize: 16,
-    color: "#666",
+    fontSize: theme.typography.fontSize.md,
+    color: theme.colors.text.secondary,
     textAlign: "center",
     lineHeight: 24,
   },
   backButton: {
-    position: "absolute",
-    bottom: 16,
-    left: 16,
-    right: 16,
-    backgroundColor: "#333",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  backButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 16,
+    marginTop: theme.spacing.md,
   },
 });
 
