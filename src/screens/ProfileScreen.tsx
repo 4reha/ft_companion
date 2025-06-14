@@ -18,7 +18,6 @@ const ProfileScreen = () => {
   const { logout } = useAuth();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
 
-  // Use React Query hook to fetch current user data
   const {
     data: user,
     isLoading,

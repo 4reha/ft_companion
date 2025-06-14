@@ -19,7 +19,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
     <Card style={styles.section}>
       <View style={styles.statsGrid}>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{wallet}</Text>
+          <Text style={styles.statValue}>{wallet}₳</Text>
           <Text style={styles.statLabel}>Wallet</Text>
         </View>
 

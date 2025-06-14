@@ -2,6 +2,7 @@
   "expo": {
     "name": "ft_companion",
     "slug": "ft_companion",
+    "owner": "ael-hadd",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

@@ -19,7 +19,12 @@ const LoginScreen = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>42 Companion</Text>
-      <Button title="Continue with intra" onPress={handleLogin} size="large" />
+      <Button
+        title="Continue with 42 Intra"
+        onPress={handleLogin}
+        size="large"
+        fullWidth
+      />
     </View>
   );
 };

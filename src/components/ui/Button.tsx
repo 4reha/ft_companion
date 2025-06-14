@@ -40,7 +40,6 @@ export const Button: React.FC<ButtonProps> = ({
       alignItems: "center",
     };
 
-    // Size
     switch (size) {
       case "small":
         baseStyle.paddingVertical = theme.spacing.xs;
@@ -55,7 +54,6 @@ export const Button: React.FC<ButtonProps> = ({
         baseStyle.paddingHorizontal = theme.spacing.lg;
     }
 
-    // Variant
     switch (variant) {
       case "secondary":
         baseStyle.backgroundColor = theme.colors.secondary;
@@ -67,12 +65,10 @@ export const Button: React.FC<ButtonProps> = ({
         baseStyle.backgroundColor = theme.colors.primary;
     }
 
-    // Disabled
     if (disabled || loading) {
       baseStyle.opacity = 0.6;
     }
 
-    // Full Width
     if (fullWidth) {
       baseStyle.width = "100%";
     }
@@ -83,10 +79,9 @@ export const Button: React.FC<ButtonProps> = ({
   const getTextStyle = () => {
     const baseStyle: TextStyle = {
       color: theme.colors.text.white,
-      fontWeight: "600",
+      fontWeight: "700",
     };
 
-    // Size
     switch (size) {
       case "small":
         baseStyle.fontSize = theme.typography.fontSize.sm;

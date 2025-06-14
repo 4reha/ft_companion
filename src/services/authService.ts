@@ -1,37 +1,31 @@
 import * as AuthSession from "expo-auth-session";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
-import {
-  EXPO_PUBLIC_42_CLIENT_ID,
-  EXPO_PUBLIC_42_CLIENT_SECRET,
-  EXPO_PUBLIC_42_REDIRECT_URI,
-} from "@env";
+import { EXPO_PUBLIC_42_CLIENT_ID, EXPO_PUBLIC_42_CLIENT_SECRET } from "@env";
 
-// Token storage keys
 const ACCESS_TOKEN_KEY = "42_access_token";
 const REFRESH_TOKEN_KEY = "42_refresh_token";
 const TOKEN_EXPIRY_KEY = "42_token_expiry";
 
-// Auth session configuration
 const discovery = {
   authorizationEndpoint: "https://api.intra.42.fr/oauth/authorize",
   tokenEndpoint: "https://api.intra.42.fr/oauth/token",
 };
 
-// Types
 interface TokenResponse {
   access_token: string;
   refresh_token: string;
   expires_in: number;
 }
 
-// Function to initiate OAuth login
 export const login = async () => {
   try {
     const request = new AuthSession.AuthRequest({
       clientId: EXPO_PUBLIC_42_CLIENT_ID,
       scopes: ["public"],
-      redirectUri: EXPO_PUBLIC_42_REDIRECT_URI,
+      redirectUri: AuthSession.makeRedirectUri({
+        path: "/auth/callback",
+      }),
     });
 
     const result = await request.promptAsync(discovery);
@@ -47,7 +41,6 @@ export const login = async () => {
   }
 };
 
-// Exchange authorization code for tokens
 const exchangeCodeForToken = async (code: string): Promise<boolean> => {
   try {
     const response = await axios.post<TokenResponse>(
@@ -57,7 +50,9 @@ const exchangeCodeForToken = async (code: string): Promise<boolean> => {
         client_id: EXPO_PUBLIC_42_CLIENT_ID,
         client_secret: EXPO_PUBLIC_42_CLIENT_SECRET,
         code,
-        redirect_uri: EXPO_PUBLIC_42_REDIRECT_URI,
+        redirect_uri: AuthSession.makeRedirectUri({
+          path: "/auth/callback",
+        }),
       }
     );
 
@@ -70,12 +65,11 @@ const exchangeCodeForToken = async (code: string): Promise<boolean> => {
 
     return true;
   } catch (error) {
-    console.log("Token exchange error:", error);
+    console.error("Token exchange error:", error);
     return false;
   }
 };
 
-// Get the current access token (refreshing if needed)
 export const getAccessToken = async (): Promise<string | null> => {
   try {
     const expiryTimeStr = await SecureStore.getItemAsync(TOKEN_EXPIRY_KEY);
@@ -87,7 +81,6 @@ export const getAccessToken = async (): Promise<string | null> => {
 
     const expiryTime = parseInt(expiryTimeStr);
 
-    // If token is expired or will expire in the next 5 minutes
     if (Date.now() > expiryTime - 5 * 60 * 1000) {
       const refreshed = await refreshToken();
       if (!refreshed) {
@@ -103,7 +96,6 @@ export const getAccessToken = async (): Promise<string | null> => {
   }
 };
 
-// Refresh the token when it expires
 const refreshToken = async (): Promise<boolean> => {
   try {
     const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
@@ -136,7 +128,6 @@ const refreshToken = async (): Promise<boolean> => {
   }
 };
 
-// Logout by removing stored tokens
 export const logout = async (): Promise<void> => {
   try {
     await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
@@ -147,7 +138,6 @@ export const logout = async (): Promise<void> => {
   }
 };
 
-// Check if user is logged in
 export const isLoggedIn = async (): Promise<boolean> => {
   const token = await getAccessToken();
   return token !== null;

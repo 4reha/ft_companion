@@ -2,12 +2,10 @@ import axios from "axios";
 import { getAccessToken } from "./authService";
 import { User } from "../types/api";
 
-// Base API instance
 const api = axios.create({
   baseURL: "https://api.intra.42.fr/v2",
 });
 
-// Add request interceptor to add auth token
 api.interceptors.request.use(
   async (config) => {
     const token = await getAccessToken();
@@ -19,31 +17,23 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Add response interceptor to handle errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle specific error cases
     if (error.response) {
-      // Server responded with error status
       console.error(
         `API Error: ${error.response.status} - ${JSON.stringify(
           error.response.data
         )}`
       );
 
-      // Handle specific status codes
       switch (error.response.status) {
         case 401:
-          // Unauthorized - token issue
-          // This should be handled by authService refreshToken
           break;
         case 404:
-          // Not found
           error.message = "Resource not found";
           break;
         case 429:
-          // Rate limit exceeded
           error.message = "API rate limit exceeded. Please try again later.";
           break;
         case 500:
@@ -53,11 +43,9 @@ api.interceptors.response.use(
           error.message = error.response.data.message || "An error occurred";
       }
     } else if (error.request) {
-      // Request was made but no response
       console.error("API Request Error:", error.request);
       error.message = "Network error. Please check your connection.";
     } else {
-      // Other errors
       console.error("API Error:", error.message);
     }
 
@@ -90,7 +78,7 @@ export const searchUsers = async (query: string): Promise<User[]> => {
       params: {
         "filter[login]": query,
         sort: "login",
-        "page[size]": 20, // Limit results to 20 users per page
+        "page[size]": 20,
       },
     });
     return response.data;

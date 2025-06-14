@@ -13,7 +13,6 @@ import { theme } from "../../theme/theme";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
-// Initialize dayjs plugins
 dayjs.extend(relativeTime);
 
 interface ProjectsListProps {
@@ -31,7 +30,6 @@ export const ProjectsList: React.FC<ProjectsListProps> = ({
 }) => {
   const [expandedGroupId, setExpandedGroupId] = useState<number | null>(null);
 
-  // Filter projects by the selected cursus
   const filteredProjects = useMemo(
     () =>
       projects.filter((project) =>
@@ -56,16 +54,13 @@ export const ProjectsList: React.FC<ProjectsListProps> = ({
             return acc;
           }
 
-          // Find the parent project in the accumulator
           const parentProject = acc.find((p) => p.project.id === parentId);
           if (parentProject) {
-            // If the parent project is found, add the current project as a child
             parentProject.children.push({
               project,
               ...rest,
             });
           } else {
-            // If the parent project is not found, create a new entry for it
             const parentProject = filteredProjects.find(
               (p) => p.project.id === parentId
             );
@@ -83,15 +78,12 @@ export const ProjectsList: React.FC<ProjectsListProps> = ({
       ),
     [filteredProjects]
   );
-  // Sort projects: in_progress first, then by date
   const sortedProjects = useMemo(
     () =>
       [...groupedProjects].sort((a, b) => {
-        // In progress projects first
         if (a.status === "finished" && b.status !== "finished") return 1;
         if (a.status !== "finished" && b.status === "finished") return -1;
 
-        // Then by date (newest first)
         return (
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
@@ -103,7 +95,6 @@ export const ProjectsList: React.FC<ProjectsListProps> = ({
     setExpandedGroupId((currentId) => (currentId === groupId ? null : groupId));
   };
 
-  // Helper function to render status indicator
   const getStatusInfo = (project: ProjectUser) => {
     let color, text;
 
@@ -123,7 +114,6 @@ export const ProjectsList: React.FC<ProjectsListProps> = ({
     return { color, text };
   };
 
-  // Format relative time
   const getRelativeTime = (dateString: string) => {
     return dayjs(dateString).fromNow();
   };
@@ -153,8 +143,13 @@ export const ProjectsList: React.FC<ProjectsListProps> = ({
                   }
                   style={[
                     styles.projectItem,
-                    project.status === "in_progress" &&
-                      styles.projectInProgress,
+                    project.status !== "finished" && styles.projectInProgress,
+                    project.status === "finished" &&
+                      project["validated?"] === true &&
+                      styles.projectValidated,
+                    project.status === "finished" &&
+                      project["validated?"] === false &&
+                      styles.projectFailed,
                   ]}
                 >
                   <View style={styles.projectHeader}>
@@ -207,6 +202,12 @@ export const ProjectsList: React.FC<ProjectsListProps> = ({
                             styles.childProject,
                             childProject.status === "in_progress" &&
                               styles.childProjectInProgress,
+                            childProject.status === "finished" &&
+                              childProject["validated?"] === true &&
+                              styles.childProjectValidated,
+                            childProject.status === "finished" &&
+                              childProject["validated?"] === false &&
+                              styles.childProjectFailed,
                           ]}
                         >
                           <View style={styles.childProjectHeader}>
@@ -265,10 +266,10 @@ const styles = StyleSheet.create({
     color: theme.colors.text.primary,
   },
   projectsListContainer: {
-    height: 400, // Fixed height container
+    height: 400,
   },
   projectsList: {
-    flex: 1, // Take up all available space in container
+    flex: 1,
   },
   projectGroupContainer: {
     marginBottom: theme.spacing.md,
@@ -282,6 +283,12 @@ const styles = StyleSheet.create({
   },
   projectInProgress: {
     borderLeftColor: theme.colors.warning,
+  },
+  projectValidated: {
+    borderLeftColor: theme.colors.success,
+  },
+  projectFailed: {
+    borderLeftColor: theme.colors.error,
   },
   projectHeader: {
     flexDirection: "row",
@@ -338,6 +345,12 @@ const styles = StyleSheet.create({
   },
   childProjectInProgress: {
     borderLeftColor: theme.colors.warning,
+  },
+  childProjectValidated: {
+    borderLeftColor: theme.colors.success,
+  },
+  childProjectFailed: {
+    borderLeftColor: theme.colors.error,
   },
   childProjectHeader: {
     flexDirection: "row",

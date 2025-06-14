@@ -12,7 +12,6 @@ import SearchScreen from "../screens/SearchScreen";
 import ProfileDetailScreen from "../screens/ProfileDetailScreen";
 import { theme } from "../theme/theme";
 
-// Define the stack navigator param lists
 export type RootStackParamList = {
   Login: undefined;
   MainTabs: undefined;
@@ -27,7 +26,6 @@ export type MainTabsParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabsParamList>();
 
-// Bottom tabs navigator component
 const MainTabNavigator = () => {
   return (
     <Tab.Navigator

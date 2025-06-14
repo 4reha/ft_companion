@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { User } from "../../types/api";
 
-// Import our sub-components
 import { ProfileHeader } from "./ProfileHeader";
 import { CursusSelector } from "./CursusSelector";
 import { LevelProgress } from "./LevelProgress";
@@ -19,10 +18,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     user.cursus_users.findIndex(({ cursus }) => cursus.kind === "main")
   );
 
-  // Get the selected cursus
   const selectedCursus = user.cursus_users[selectedCursusIndex];
 
-  // Handle cursus change
   const handleCursusChange = (index: number) => {
     setSelectedCursusIndex(index);
   };

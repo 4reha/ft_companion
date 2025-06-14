@@ -32,15 +32,12 @@ const SearchScreen = () => {
   const [searched, setSearched] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-  // Use React Query's useMutation for search
   const { mutate: search, isPending: loading, error } = useSearchUsers();
 
-  // Load recent searches when component mounts
   useEffect(() => {
     loadRecentSearches();
   }, []);
 
-  // Function to load recent searches from AsyncStorage
   const loadRecentSearches = async () => {
     try {
       const savedSearches = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
@@ -52,10 +49,8 @@ const SearchScreen = () => {
     }
   };
 
-  // Function to save a search to recent searches
   const saveRecentSearch = async (query: string) => {
     try {
-      // Add to state
       const updatedSearches = [
         query,
         ...recentSearches.filter((search) => search !== query),
@@ -63,7 +58,6 @@ const SearchScreen = () => {
 
       setRecentSearches(updatedSearches);
 
-      // Save to AsyncStorage
       await AsyncStorage.setItem(
         RECENT_SEARCHES_KEY,
         JSON.stringify(updatedSearches)
@@ -73,7 +67,6 @@ const SearchScreen = () => {
     }
   };
 
-  // Function to clear all recent searches
   const clearAllRecentSearches = async () => {
     try {
       setRecentSearches([]);
@@ -83,7 +76,6 @@ const SearchScreen = () => {
     }
   };
 
-  // Function to remove a single recent search
   const removeRecentSearch = async (query: string) => {
     try {
       const updatedSearches = recentSearches.filter((item) => item !== query);
@@ -103,7 +95,6 @@ const SearchScreen = () => {
       return;
     }
 
-    // Add to recent searches
     saveRecentSearch(searchQuery.trim());
 
     search(searchQuery, {

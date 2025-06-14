@@ -10,28 +10,13 @@ interface ProfileHeaderProps {
 }
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user }) => {
-  const renderCoalition = () => {
-    if (!user.coalition) return null;
-
-    return (
-      <View
-        style={[
-          styles.coalitionBadge,
-          { backgroundColor: user.coalition.color || theme.colors.primary },
-        ]}
-      >
-        <Text style={styles.coalitionName}>{user.coalition.name}</Text>
-      </View>
-    );
-  };
-
   const renderLocation = () => {
-    if (!user.location) return null;
-
     return (
       <View style={styles.locationContainer}>
         <Ionicons name="location" size={14} color={theme.colors.primary} />
-        <Text style={styles.locationText}>{user.location}</Text>
+        <Text style={styles.locationText}>
+          {user.location ?? "Unavailable"}
+        </Text>
       </View>
     );
   };
@@ -39,7 +24,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user }) => {
   return (
     <Card style={styles.headerCard}>
       <View style={styles.headerTop}>
-        {renderCoalition()}
+        {/* {renderCoalition()} */}
         {renderLocation()}
       </View>
 
