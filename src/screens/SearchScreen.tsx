@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,27 +8,94 @@ import {
   Image,
   Alert,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
-import { searchUsers } from "../services/apiService";
+import { useSearchUsers } from "../hooks/useApi";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Button } from "../components/ui/Button";
 import { theme } from "../theme/theme";
 import { User } from "../types/api";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-type SearchScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "Search"
->;
+type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+const RECENT_SEARCHES_KEY = "recent_searches";
+const MAX_RECENT_SEARCHES = 10;
 
 const SearchScreen = () => {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  // Use React Query's useMutation for search
+  const { mutate: search, isPending: loading, error } = useSearchUsers();
+
+  // Load recent searches when component mounts
+  useEffect(() => {
+    loadRecentSearches();
+  }, []);
+
+  // Function to load recent searches from AsyncStorage
+  const loadRecentSearches = async () => {
+    try {
+      const savedSearches = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
+      if (savedSearches) {
+        setRecentSearches(JSON.parse(savedSearches));
+      }
+    } catch (error) {
+      console.error("Error loading recent searches:", error);
+    }
+  };
+
+  // Function to save a search to recent searches
+  const saveRecentSearch = async (query: string) => {
+    try {
+      // Add to state
+      const updatedSearches = [
+        query,
+        ...recentSearches.filter((search) => search !== query),
+      ].slice(0, MAX_RECENT_SEARCHES);
+
+      setRecentSearches(updatedSearches);
+
+      // Save to AsyncStorage
+      await AsyncStorage.setItem(
+        RECENT_SEARCHES_KEY,
+        JSON.stringify(updatedSearches)
+      );
+    } catch (error) {
+      console.error("Error saving recent search:", error);
+    }
+  };
+
+  // Function to clear all recent searches
+  const clearAllRecentSearches = async () => {
+    try {
+      setRecentSearches([]);
+      await AsyncStorage.removeItem(RECENT_SEARCHES_KEY);
+    } catch (error) {
+      console.error("Error clearing recent searches:", error);
+    }
+  };
+
+  // Function to remove a single recent search
+  const removeRecentSearch = async (query: string) => {
+    try {
+      const updatedSearches = recentSearches.filter((item) => item !== query);
+      setRecentSearches(updatedSearches);
+      await AsyncStorage.setItem(
+        RECENT_SEARCHES_KEY,
+        JSON.stringify(updatedSearches)
+      );
+    } catch (error) {
+      console.error("Error removing recent search:", error);
+    }
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -36,17 +103,40 @@ const SearchScreen = () => {
       return;
     }
 
-    try {
-      setLoading(true);
-      const results = await searchUsers(searchQuery);
-      setSearchResults(results);
-      setSearched(true);
-    } catch (error) {
-      console.error("Search error:", error);
-      Alert.alert("Error", "Failed to search users. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    // Add to recent searches
+    saveRecentSearch(searchQuery.trim());
+
+    search(searchQuery, {
+      onSuccess: (results) => {
+        setSearchResults(results);
+        setSearched(true);
+      },
+      onError: (error) => {
+        console.error("Search error:", error);
+        Alert.alert("Error", "Failed to search users. Please try again.");
+      },
+    });
+  };
+
+  const handleClearInput = () => {
+    setSearchQuery("");
+    setSearched(false);
+    setSearchResults([]);
+  };
+
+  const handleRecentSearchPress = (query: string) => {
+    setSearchQuery(query);
+    search(query, {
+      onSuccess: (results) => {
+        setSearchResults(results);
+        setSearched(true);
+        saveRecentSearch(query);
+      },
+      onError: (error) => {
+        console.error("Search error:", error);
+        Alert.alert("Error", "Failed to search users. Please try again.");
+      },
+    });
   };
 
   const handleUserSelect = (login: string) => {
@@ -65,6 +155,47 @@ const SearchScreen = () => {
       </View>
     </TouchableOpacity>
   );
+
+  const renderRecentSearchItem = ({ item }: { item: string }) => (
+    <View style={styles.recentSearchItem}>
+      <TouchableOpacity
+        style={styles.recentSearchTextContainer}
+        onPress={() => handleRecentSearchPress(item)}
+      >
+        <Ionicons
+          name="time-outline"
+          size={16}
+          color={theme.colors.text.secondary}
+        />
+        <Text style={styles.recentSearchText}>{item}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => removeRecentSearch(item)}>
+        <Ionicons name="close" size={16} color={theme.colors.text.secondary} />
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderRecentSearches = () => {
+    if (recentSearches.length === 0) return null;
+
+    return (
+      <View style={styles.recentSearchesContainer}>
+        <View style={styles.recentSearchesHeader}>
+          <Text style={styles.recentSearchesTitle}>Recent Searches</Text>
+          <TouchableOpacity onPress={clearAllRecentSearches}>
+            <Text style={styles.clearAllText}>Clear All</Text>
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={recentSearches}
+          renderItem={renderRecentSearchItem}
+          keyExtractor={(item, index) => `${item}-${index}`}
+          scrollEnabled={false}
+          nestedScrollEnabled={true}
+        />
+      </View>
+    );
+  };
 
   const renderContent = () => {
     if (loading) {
@@ -93,44 +224,52 @@ const SearchScreen = () => {
     }
 
     return (
-      <View style={styles.initialContainer}>
+      <ScrollView style={styles.initialContainer}>
         <Text style={styles.initialText}>
           Search for students by their login name
         </Text>
-      </View>
+        {renderRecentSearches()}
+      </ScrollView>
     );
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search by login..."
-          autoCapitalize="none"
-          returnKeyType="search"
-          onSubmitEditing={handleSearch}
-        />
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search by login..."
+            autoCapitalize="none"
+            returnKeyType="search"
+            onSubmitEditing={handleSearch}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={handleClearInput}
+            >
+              <Ionicons
+                name="close-circle"
+                size={18}
+                color={theme.colors.text.secondary}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
         <Button
           title="Search"
           onPress={handleSearch}
-          disabled={loading}
+          disabled={loading || searchQuery.trim() === ""}
+          loading={loading}
           size="small"
           style={styles.searchButton}
         />
       </View>
 
       <View style={styles.contentContainer}>{renderContent()}</View>
-
-      <Button
-        title="Back to Profile"
-        onPress={() => navigation.navigate("Profile")}
-        variant="secondary"
-        style={styles.backButton}
-        fullWidth
-      />
     </View>
   );
 };
@@ -145,15 +284,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginBottom: theme.spacing.md,
   },
-  searchInput: {
+  inputContainer: {
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
     height: 46,
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: theme.radius.md,
     paddingHorizontal: theme.spacing.sm,
     backgroundColor: theme.colors.card,
+  },
+  searchInput: {
+    flex: 1,
     fontSize: theme.typography.fontSize.md,
+  },
+  clearButton: {
+    padding: 4,
   },
   searchButton: {
     marginLeft: theme.spacing.sm,
@@ -207,18 +354,55 @@ const styles = StyleSheet.create({
   },
   initialContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: theme.spacing.xl,
+    paddingTop: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.md,
   },
   initialText: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.text.secondary,
     textAlign: "center",
     lineHeight: 24,
+    marginBottom: theme.spacing.xl,
   },
-  backButton: {
-    marginTop: theme.spacing.md,
+  recentSearchesContainer: {
+    marginTop: theme.spacing.lg,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    ...theme.shadows.small,
+  },
+  recentSearchesHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: theme.spacing.sm,
+  },
+  recentSearchesTitle: {
+    fontSize: theme.typography.fontSize.md,
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.text.primary,
+  },
+  clearAllText: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.primary,
+  },
+  recentSearchItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: theme.spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  recentSearchTextContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  recentSearchText: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary,
+    marginLeft: theme.spacing.xs,
   },
 });
 

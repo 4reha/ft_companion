@@ -95,6 +95,7 @@ export interface CursusUser {
     created_at: string;
     name: string;
     slug: string;
+    kind: string;
   };
 }
 
@@ -114,7 +115,7 @@ export interface ProjectUser {
     | "searching_a_group"
     | "creating_group"
     | "waiting_for_correction";
-  validated?: boolean;
+  "validated?": boolean;
   current_team_id: number;
   project: {
     id: number;

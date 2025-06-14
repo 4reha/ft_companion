@@ -1,79 +1,64 @@
-import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import React, { useEffect } from "react";
+import { ScrollView, StyleSheet, View, RefreshControl } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { useAuth } from "../contexts/AuthContext";
-import { getCurrentUser } from "../services/apiService";
-import { User } from "../types/api";
+import { useCurrentUser } from "../hooks/useApi";
 import { ProfileCard } from "../components/profile/ProfileCard";
 import { LoadingView } from "../components/ui/LoadingView";
 import { ErrorView } from "../components/ui/ErrorView";
 import { Button } from "../components/ui/Button";
 import { theme } from "../theme/theme";
 
-type ProfileScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "Profile"
->;
+type ProfileScreenNavigationProp =
+  NativeStackNavigationProp<RootStackParamList>;
 
 const ProfileScreen = () => {
   const { logout } = useAuth();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      const userData = await getCurrentUser();
-      setUser(userData);
-      setError(null);
-    } catch (err) {
-      setError("Failed to load profile data");
-      console.error("Error fetching user data:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use React Query hook to fetch current user data
+  const {
+    data: user,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = useCurrentUser();
 
   const handleLogout = async () => {
     await logout();
   };
 
-  const navigateToSearch = () => {
-    navigation.navigate("Search");
-  };
+  // const navigateToSearch = () => {
+  //   navigation.navigate("Search");
+  // };
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingView message="Loading profile..." />;
   }
 
-  if (error || !user) {
+  if (isError || !user) {
     return (
       <ErrorView
-        message={error || "Failed to load user data"}
-        onRetry={fetchUserData}
+        message={error?.message || "Failed to load user data"}
+        onRetry={() => refetch()}
       />
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+      }
+    >
       <ProfileCard user={user} />
 
       <View style={styles.buttonsContainer}>
-        <Button
-          title="Search Students"
-          onPress={navigateToSearch}
-          style={styles.button}
-          fullWidth
-        />
         <Button
           title="Logout"
           onPress={handleLogout}

@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import React from "react";
+import { ScrollView, StyleSheet, RefreshControl } from "react-native";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/AppNavigator";
-import { getUserByLogin } from "../services/apiService";
-import { User } from "../types/api";
+import { useUserByLogin } from "../hooks/useApi";
 import { ProfileCard } from "../components/profile/ProfileCard";
 import { LoadingView } from "../components/ui/LoadingView";
 import { ErrorView } from "../components/ui/ErrorView";
@@ -18,43 +17,36 @@ const ProfileDetailScreen = () => {
   const route = useRoute<ProfileDetailScreenRouteProp>();
   const { login } = route.params;
 
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Use React Query hook to fetch user data by login
+  const {
+    data: user,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = useUserByLogin(login);
 
-  useEffect(() => {
-    fetchUserData();
-  }, [login]);
-
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      const userData = await getUserByLogin(login);
-      setUser(userData);
-      setError(null);
-    } catch (err) {
-      setError("Failed to load user data");
-      console.error(`Error fetching user ${login}:`, err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return <LoadingView message="Loading profile..." />;
   }
 
-  if (error || !user) {
+  if (isError || !user) {
     return (
       <ErrorView
-        message={error || "Failed to load user data"}
-        onRetry={fetchUserData}
+        message={error?.message || "Failed to load user data"}
+        onRetry={() => refetch()}
       />
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+      }
+    >
       <ProfileCard user={user} />
     </ScrollView>
   );
