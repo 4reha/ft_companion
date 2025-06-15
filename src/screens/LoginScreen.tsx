@@ -12,7 +12,6 @@ const LoginScreen = () => {
       await login();
     } catch (error) {
       console.error("Login error:", error);
-      // Handle error (you could add a toast notification here)
     }
   };
 
